@@ -33,8 +33,8 @@ public class DecodeUnit {
 	public static void initFreeTables() {
 		for (int i = 1; i < 64; i++) {
 			// Think how to implement Hi and Lo registers
-			integerFreeList.add(new Register("int", i));
-			floatingFreeList.add(new Register("float", i - 1));
+			integerFreeList.add(new Register("R", i));
+			floatingFreeList.add(new Register("F", i - 1));
 		}
 	}
 
@@ -64,14 +64,13 @@ public class DecodeUnit {
 		//check if an instruction can be issued
 	}
 
-	public static Instruction[] decodeAndRename() {
-		Instruction[] instructions = new Instruction[issueLimit];
+	public static void decodeAndRename() {
+		instructions = new Instruction[issueLimit];
 		for (int i = 0; i < sInstructions.length; i++) {
 			Instruction instr = decode(sInstructions[i]);
 			rename(instr);
 			instructions[i] = instr;
 		}
-		return instructions;
 	}
 	
 	public static Instruction decode(String sInstruction) {

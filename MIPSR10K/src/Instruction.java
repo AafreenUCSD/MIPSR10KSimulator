@@ -16,23 +16,26 @@ public class Instruction {
 	
 	public Instruction(String[] parts){
 		type = TypeOfInstruction.valueOf(parts[0]);
-		int rs1 = Integer.parseInt(parts[1]);
-		int rs2 = Integer.parseInt(parts[2]);
+		int rs_input = Integer.parseInt(parts[1]);
+		int rt_input = Integer.parseInt(parts[2]);
+		int rd_input = Integer.parseInt(parts[2]);
 		if(type==TypeOfInstruction.valueOf("I")){
-			rs = new Register("int", rs1);
-			rt = new Register("int", rs2);
+			rs = new Register("R", rs_input);
+			rt = new Register("R", rt_input);
+			rd = new Register("R", rd_input);
 		}
 		else if(type==TypeOfInstruction.valueOf("A") || type==TypeOfInstruction.valueOf("M") ){
-			rs = new Register("float", rs1);
-			rt = new Register("float", rs2);
+			rs = new Register("F", rs_input);
+			rt = new Register("F", rt_input);
+			rd = new Register("F", rd_input);
 		}
 		if(parts.length>3)
 			addr = parts[3];
 	}
 	
 	public void print(){
-		System.out.println(rs.number+"->"+rs1.number);
-		System.out.println(rt.number+"->"+rt1.number);
-		System.out.println(rd.number+"->"+rd1.number);
+		System.out.println(rs.type+rs.number+"->"+rs1.type+rs1.number);
+		System.out.println(rt.type+rt.number+"->"+rt1.type+rt1.number);
+		System.out.println(rd.type+rd.number+"->"+rd1.type+rd1.number);
 	}
 }
