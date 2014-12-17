@@ -1,11 +1,9 @@
 
-public class CommitUnit {
-	/*
-	 * Need to ensure in-order commits using active list == reorder buffer
-	 */
+public class FPMUL1 {
 	static int currentClock;
 	static int limit;
-	
+	static Instruction[] instructions;
+
 	public static void edge(int clock){
 		
 	}
