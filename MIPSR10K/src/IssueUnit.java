@@ -18,11 +18,16 @@ public class IssueUnit {
 	
 	public static void edge(int clock){
 		//Send to appropriate FU based on instruction type
+		//Remove from queues; except address queue
 		EStage.inALU1 = toBeIssuedToALU1;
 		EStage.inALU2 = toBeIssuedToALU2;
 		AStage.instr = toBeIssuedToAddressCalculation;
 		FPADD1.instr = toBeIssuedToFPADD1;
 		FPMUL1.instr = toBeIssuedToFPMUL1;
+		DecodeUnit.integerQueue.remove(toBeIssuedToALU1);
+		DecodeUnit.integerQueue.remove(toBeIssuedToALU2);
+		DecodeUnit.floatingQueue.remove(toBeIssuedToFPMUL1);
+		DecodeUnit.floatingQueue.remove(toBeIssuedToFPADD1);
 	}
 	
 	public static void calc(int clock){
@@ -100,14 +105,22 @@ public class IssueUnit {
 					if(instr.type==TypeOfInstruction.valueOf("A")){
 						if(!FPADD1.isBusy){
 							toBeIssuedToFPADD1 = instr;
-						}
-					}
-					if(instr.type==TypeOfInstruction.valueOf("M")){
-						if(!FPMUL1.isBusy){
-							toBeIssuedToFPMUL1 = instr;
+							break;
 						}
 					}
 				}			
+		}
+		
+		for(int i=0; i<DecodeUnit.floatingQueue.size(); i++){
+			Instruction instr = DecodeUnit.floatingQueue.get(i);
+			if(!DecodeUnit.floatingBusyBitTable[instr.rs1.number] && !DecodeUnit.floatingBusyBitTable[instr.rt1.number]){
+				if(instr.type==TypeOfInstruction.valueOf("M") && !instr.done){
+					if(!FPMUL1.isBusy){
+						toBeIssuedToFPMUL1 = instr;
+						break;
+					}
+				}
+			}			
 		}
 	}
 

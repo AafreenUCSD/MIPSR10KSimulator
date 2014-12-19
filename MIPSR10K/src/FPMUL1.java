@@ -1,4 +1,3 @@
-
 public class FPMUL1 {
 	static int currentClock;
 	static int limit;
@@ -14,7 +13,7 @@ public class FPMUL1 {
 	
 	public static void calc(int clock){
 		currentClock = clock;
-		if(instr!=null && !instr.done){
+		if(instr!=null){
 			FPMUL1.isBusy = true;
 			if(!FPMUL2.isBusy){
 				toBeIssuedToFPMUL2 = instr;

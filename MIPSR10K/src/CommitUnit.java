@@ -1,4 +1,3 @@
-
 public class CommitUnit {
 	/*
 	 * Need to ensure in-order commits using active list == reorder buffer
@@ -30,16 +29,17 @@ public class CommitUnit {
 			fromALU2.done = true;
 			DecodeUnit.integerFreeList.add(fromALU2.rd1);
 		}
-		if(fromFPADD3!=null && !fromFPADD3.done){
+		if(fromFPADD3!=null && isInorderCommit(fromFPADD3)){
 			dumpState3();
 			count++;
 			fromFPADD3.done = true;
+			DecodeUnit.activeList.remove(fromFPADD3);
 			DecodeUnit.integerFreeList.add(fromFPADD3.rd1);
 		}
-		if(fromFPMUL3!=null && !fromFPMUL3.done && isInorderCommit(fromFPMUL3)){
+		if(fromFPMUL3!=null && isInorderCommit(fromFPMUL3)){
 			dumpState4();
 			count++;
-			fromFPMUL3.done = true;
+			//fromFPMUL3.done = true;
 			DecodeUnit.activeList.remove(fromFPMUL3);
 			DecodeUnit.integerFreeList.add(fromFPMUL3.rd1);
 		}
@@ -56,10 +56,12 @@ public class CommitUnit {
 	}
 	
 	public static boolean isInorderCommit(Instruction instr){
+		Instruction other;
 		for(int i=0 ;i< DecodeUnit.activeList.size(); i++){
-			if(DecodeUnit.activeList.get(i).id < instr.id){
-				return false;
-			}
+				other = DecodeUnit.activeList.get(i);
+				if(other.id < instr.id && !other.done){
+					return false;
+				}
 		}
 		return true;
 	}

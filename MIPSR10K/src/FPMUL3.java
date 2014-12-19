@@ -1,4 +1,3 @@
-
 public class FPMUL3 {
 	static int currentClock;
 	static int limit;
@@ -13,7 +12,7 @@ public class FPMUL3 {
 	
 	public static void calc(int clock){
 		currentClock = clock;
-		if(instr!=null && !instr.done){
+		if(instr!=null){
 			FPMUL3.isBusy = true;
 			//Check if it can be passed to the writeback stage
 			toBeCommitted = instr;
