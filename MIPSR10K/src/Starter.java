@@ -1,10 +1,5 @@
 import java.io.*;
 
-import javax.swing.JTable;
-import javax.swing.table.DefaultTableModel;
-import javax.swing.table.TableColumn;
-import javax.swing.table.TableColumnModel;
-
 public class Starter{
 	
 	static String traceFile;
@@ -12,32 +7,10 @@ public class Starter{
 	static int clockCycles = 100;
 	static BufferedReader reader;
 	static int readFrom = 0;
-	static String[] instructions;
-	
-	 //create object of table and tablem model
-	 static JTable jTable = new JTable();
-	 
-	 public Starter(){
-		 /*
-		 DefaultTableModel dtm = new DefaultTableModel(0, 0);
-
-		 //add header of the table
-		 String header[] = new String[] { "1","2","3","4","5","6","7","8","9","10" };
-
-		 //add header in table model
-		 dtm.setColumnIdentifiers(header);
-		 //set model into the table object
-		 tbl.setModel(dtm);
-		 */
-		 
-		 /*From Java ranch
-		 TableColumnModel tcm = jTable.getColumnModel();
-		 //The TableColumnModel represents the form for every column in your table. 
-		 TableColumn tc = tcm.getColumn(0);
-		 //TableColumn represents the form for a particular column.
-		 tc.setHeaderValue("My New Value");
-		 */
-	 }
+	static Register[] logicalIntegerRegisterFile;
+	static Register[] logicalFloatingRegisterFile;
+	static String[][] pipelineDiagram = new String[50][100];
+	static String[] columnNames = {"0","1","2","3","4","5","6","7","8","9"};
 	 
 	public static void main(String[] args) {
 		/*
@@ -48,16 +21,6 @@ public class Starter{
 
 		parse(args);
 		initialize();
-		// String[] sInstructions=null;
-		// Instruction[] instructions=null;
-
-		// DecodeUnit.initFreeTables();
-		// sInstructions = fetch();
-		// instructions = DecodeUnit.decodeAndRename(sInstructions, clock,
-		// issueLimit);
-		// DecodeUnit.putIntoActiveList(instructions, clock, issueLimit);
-		// DecodeUnit.writeToQueue(instructions, clock, issueLimit);
-
 		/*
 		 * The idea behind calc and edge: The calc stage does all the main
 		 * computation, The edge stage is the transition to the next cycle. We
@@ -69,10 +32,9 @@ public class Starter{
 		 */
 		for (int clock = 1; clock <= clockCycles; clock++) {
 			calc(clock);
-			draw(clock);
 			edge(clock);
-			readFrom = readFrom + issueLimit;
 		}
+		PipeLine.createAndShowGUI();
 	}
 
 	public static void initialize() {
@@ -80,17 +42,24 @@ public class Starter{
 		FetchUnit.reader = reader;
 		DecodeUnit.issueLimit = issueLimit;
 		DecodeUnit.initFreeTables();
+		DecodeUnit.R0 = new Register("R",0);
+		logicalIntegerRegisterFile = new Register[32];
+		for(int i=0; i<32; i++){
+			logicalIntegerRegisterFile[i] = new Register("R",i);
+		}
+		logicalFloatingRegisterFile = new Register[32];
+		for(int i=0; i<32; i++){
+			logicalFloatingRegisterFile[i] = new Register("F",i);
+		}
 		/*
-		IssueUnit.limit = issueLimit;
-		FPADD1.limit = issueLimit;
 		CommitUnit.limit = issueLimit;
 		*/
 	}
 
 	public static void calc(int clock) {
-		FetchUnit.calc(clock, readFrom);
+		FetchUnit.calc(clock);
 		DecodeUnit.calc(clock);
-		/*
+		IssueUnit.calc(clock);
 		FPADD1.calc(clock);
 		FPADD2.calc(clock);
 		FPADD3.calc(clock);
@@ -99,14 +68,14 @@ public class Starter{
 		FPMUL3.calc(clock);
 		EStage.calc(clock);
 		AStage.calc(clock);
+		MStage.calc(clock);
 		CommitUnit.calc(clock);
-		*/
 	}
 
 	public static void edge(int clock) {
 		FetchUnit.edge(clock);
 		DecodeUnit.edge(clock);
-		/*
+		IssueUnit.edge(clock);
 		FPADD1.edge(clock);
 		FPADD2.edge(clock);
 		FPADD3.edge(clock);
@@ -115,8 +84,8 @@ public class Starter{
 		FPMUL3.edge(clock);
 		EStage.edge(clock);
 		AStage.edge(clock);
+		MStage.edge(clock);
 		CommitUnit.edge(clock);
-		*/
 	}
 	
 	public static void parse(String[] args){
@@ -143,7 +112,6 @@ public class Starter{
 	}
 
 	public static void draw(int clock){
-		FetchUnit.draw(clock);
 		DecodeUnit.draw(clock);
 	}
 }
