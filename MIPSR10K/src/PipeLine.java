@@ -12,7 +12,7 @@ public class PipeLine extends JPanel {
 	public PipeLine(){
 		super(new GridLayout(1,0));
 		JTable table = new JTable(Starter.pipelineDiagram,Starter.columnNames);
-		table.setPreferredScrollableViewportSize(new Dimension(500, 100));
+		table.setPreferredScrollableViewportSize(new Dimension(500, 200));
 		table.setFillsViewportHeight(true);
 		//Create the scroll pane and add the table to it.
 		JScrollPane scrollPane = new JScrollPane(table);

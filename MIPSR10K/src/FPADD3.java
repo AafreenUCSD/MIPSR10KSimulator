@@ -1,4 +1,3 @@
-
 public class FPADD3 {
 	static int currentClock;
 	static int limit;
@@ -9,11 +8,13 @@ public class FPADD3 {
 	public static void edge(int clock){
 		CommitUnit.fromFPADD3 = toBeCommitted;
 		FPADD3.isBusy = false;
+		if(instr!=null)
+			instr.done = true;
 	}
 	
 	public static void calc(int clock){
 		currentClock = clock;
-		if(instr!=null && !instr.done){
+		if(instr!=null){
 			FPADD3.isBusy = true;
 		//Check if it can be passed to the writeback stage
 			toBeCommitted = instr;

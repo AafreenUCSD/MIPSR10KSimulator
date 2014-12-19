@@ -1,5 +1,7 @@
 import java.util.*;
 
+import org.apache.commons.collections.buffer.CircularFifoBuffer;
+
 public class DecodeUnit {
 	
 	static List<String> sInstructions;
@@ -18,9 +20,9 @@ public class DecodeUnit {
 	static ArrayList<Instruction> integerQueue = new ArrayList<Instruction>(); //16 entries
 	static ArrayList<Instruction> floatingQueue = new ArrayList<Instruction>();//16 entries
 	
-	// Needs to be a CircularQueue
-	//static ArrayList<Instruction> loadStoreQueue = new ArrayList<Instruction>();//16 entries
-	static ArrayList<Instruction> addressQueue = new ArrayList<Instruction>();
+	//Needs to be a circular FIFO to allow circling back and sending request again
+	public static CircularFifoBuffer addressQueue = new CircularFifoBuffer(16);
+
 	static Stack<InstructionState> branchStack = new Stack<InstructionState>();//4 entries
 
 	static Register[] integerRegisterMapTable = new Register[32];//32 entries for 32 logical integer registers
@@ -79,10 +81,10 @@ public class DecodeUnit {
 	}
 	
 	public static void appendBranchMask(Instruction instr) {
-		int i=0;
-		for(InstructionState state : branchStack){
-			instr.branchMask[i] = state.branchID;
-			i++;
+		Iterator<InstructionState> it = branchStack.iterator();
+		while(it.hasNext()){
+			InstructionState branchInstr = it.next();
+			instr.branchMask.add(branchInstr.instr);
 		}
 	}
 
@@ -94,61 +96,80 @@ public class DecodeUnit {
 	}
 
 	public static void rename(Instruction instr) {
-		if (instr.type == TypeOfInstruction.valueOf("I")) {
+		if (instr.type == TypeOfInstruction.I) {
 			assignRegisterFromIntegerFreeList(instr);
-		} else if (instr.type == TypeOfInstruction.valueOf("A")
-				|| instr.type == TypeOfInstruction.valueOf("M")) {
+		} else if (instr.type == TypeOfInstruction.A
+				|| instr.type == TypeOfInstruction.M) {
 			assignRegisterFromFloatingFreeList(instr);
-		} else if (instr.type == TypeOfInstruction.valueOf("B")) {
+		} else if (instr.type == TypeOfInstruction.B) {
 			InstructionState state = new InstructionState(null,instr,integerRegisterMapTable, floatingRegisterMapTable);
+			assignRegisterFromIntegerFreeList(instr);
 			if (branchStack.size() < 4) {
 				branchStack.push(state);
 			} else {
 				//Stall decoding until one of the branches resolves. Decode resumes in the same cycle as this branch is resolved.
 			}
-		} else if(instr.type == TypeOfInstruction.valueOf("L")){
+		} else if(instr.type == TypeOfInstruction.L){
 			assignRegistersToLoad(instr);
-		} else if(instr.type == TypeOfInstruction.valueOf("S")){
+		} else if(instr.type == TypeOfInstruction.S){
 			assignRegistersToStore(instr);
 		}
 	}
 
 	public static void assignRegistersToLoad(Instruction instr) {
-		if(integerRegisterMapTable[instr.rs.number]==null){
-			rs1 = integerFreeList.remove();
-			integerRegisterMapTable[instr.rs.number] = rs1;
+		if(instr.rs.number==0)
+			instr.rs1 = R0;
+		else
+		if(floatingRegisterMapTable[instr.rs.number]==null){
+			rs1 = floatingFreeList.remove();
+			floatingRegisterMapTable[instr.rs.number] = rs1;
+			instr.rs1 = rs1;
 		}
 		else{
-			rs1 = integerRegisterMapTable[instr.rs.number];
+			rs1 = floatingRegisterMapTable[instr.rs.number];
+			instr.rs1 = rs1;
 		}
-		instr.rs1 = rs1;
-		
-		rt1 = integerFreeList.remove();
-		integerRegisterMapTable[instr.rt.number] = rt1;
-		integerBusyBitTable[rt1.number] = true;
-		instr.rt1 = rt1;
+	
+		if(instr.rt.number==0)
+			instr.rt1 = R0;
+		else{
+			rt1 = floatingFreeList.remove();
+			floatingRegisterMapTable[instr.rt.number] = rt1;
+			floatingBusyBitTable[rt1.number] = true;
+			instr.rt1 = rt1;
+		}
 		
 		instr.rd1 = R0;
 	}
 	
 	public static void assignRegistersToStore(Instruction instr) {
-		if(integerRegisterMapTable[instr.rs.number]==null){
-			rs1 = integerFreeList.remove();
-			integerRegisterMapTable[instr.rs.number] = rs1;
+		if(instr.rs.number==0)
+			instr.rs1 = R0;
+		else
+		if(floatingRegisterMapTable[instr.rs.number]==null){
+			rs1 = floatingFreeList.remove();
+			floatingRegisterMapTable[instr.rs.number] = rs1;
+			instr.rs1 = rs1;
 		}
 		else{
-			rs1 = integerRegisterMapTable[instr.rs.number];
+			rs1 = floatingRegisterMapTable[instr.rs.number];
+			instr.rs1 = rs1;
 		}
-		instr.rs1 = rs1;
 		
-		if(integerRegisterMapTable[instr.rt.number]==null){
-			rt1 = integerFreeList.remove();
-			integerRegisterMapTable[instr.rt.number] = rt1;
+		if(instr.rt.number==0)
+			instr.rt1 = R0;
+		else
+		if(floatingRegisterMapTable[instr.rt.number]==null){
+			rt1 = floatingFreeList.remove();
+			floatingRegisterMapTable[instr.rt.number] = rt1;
+			instr.rt1 = rt1;
 		}
 		else{
-			rt1 = integerRegisterMapTable[instr.rt.number];
+			rt1 = floatingRegisterMapTable[instr.rt.number];
+			instr.rt1 = rt1;
 		}
-		instr.rt1 = rt1;
+		
+		instr.rd1 = R0;
 	}
 
 	public static void assignRegisterFromIntegerFreeList(Instruction instr) {

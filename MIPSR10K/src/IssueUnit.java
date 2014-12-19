@@ -2,8 +2,7 @@ import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Queue;
-
-import org.apache.commons.collections.buffer.*;
+import org.apache.commons.collections.buffer.CircularFifoBuffer;
 
 public class IssueUnit {
 	public static int currentClock;
@@ -14,9 +13,6 @@ public class IssueUnit {
 	public static Instruction toBeIssuedToFPADD1;
 	public static Instruction toBeIssuedToFPMUL1;
 	
-	//Needs to be a circular FIFO to allow circling back and sending request again
-	public static List<Instruction> addressQueue = new ArrayList<Instruction>(16);
-	
 	public static void edge(int clock){
 		//Send to appropriate FU based on instruction type
 		//Remove from queues; except address queue
@@ -25,6 +21,7 @@ public class IssueUnit {
 		AStage.instr = toBeIssuedToAddressCalculation;
 		FPADD1.instr = toBeIssuedToFPADD1;
 		FPMUL1.instr = toBeIssuedToFPMUL1;
+
 		DecodeUnit.integerQueue.remove(toBeIssuedToALU1);
 		DecodeUnit.integerQueue.remove(toBeIssuedToALU2);
 		DecodeUnit.floatingQueue.remove(toBeIssuedToFPMUL1);
@@ -53,10 +50,30 @@ public class IssueUnit {
 			break;
 		}
 		*/
-		//There is no restriction on issuing to address calculation.
-		//Just that it won't leave the addressQueue until the instruction graduates/commits.
-		if(!AStage.isAStageBusy && DecodeUnit.addressQueue.size()!=0)
-			toBeIssuedToAddressCalculation = DecodeUnit.addressQueue.get(0);
+		//for(int i=0; i<addressQueue.size(); i++){
+		if(!DecodeUnit.addressQueue.isEmpty()){
+			Instruction instr = (Instruction) DecodeUnit.addressQueue.remove();
+			DecodeUnit.addressQueue.add(instr);
+			if(instr.type==TypeOfInstruction.valueOf("L")){
+				if(isRsReady(instr) && !AStage.isAStageBusy){
+						toBeIssuedToAddressCalculation = instr;
+						//break;
+				}
+			} else{
+				if(isRsReady(instr) && isRtReady(instr) && !AStage.isAStageBusy){
+					toBeIssuedToAddressCalculation = instr;
+					//break;
+				}
+			}
+		}
+	}
+
+	public static boolean isRtReady(Instruction instr) {
+		return !DecodeUnit.floatingBusyBitTable[instr.rt1.number] || instr.rt1==DecodeUnit.R0;
+	}
+
+	public static boolean isRsReady(Instruction instr) {
+		return !DecodeUnit.floatingBusyBitTable[instr.rs1.number] || instr.rs1==DecodeUnit.R0;
 	}
 
 	public static void checkIntegerOperandReadinessAndFUAvailability() {
@@ -72,7 +89,7 @@ public class IssueUnit {
 		for(int i=0; i<DecodeUnit.integerQueue.size(); i++){
 			Instruction instr = DecodeUnit.integerQueue.get(i);
 			if(instr.type==TypeOfInstruction.valueOf("B")){
-				if(!DecodeUnit.integerBusyBitTable[instr.rs1.number] && !DecodeUnit.integerBusyBitTable[instr.rt1.number]){
+				if(isRsIntReady(instr) && isRtIntReady(instr)){
 					if(!EStage.isALU1Busy){
 						toBeIssuedToALU1 = instr;
 						gotBranch = true;
@@ -90,7 +107,7 @@ public class IssueUnit {
 		for(int i=0; i<DecodeUnit.integerQueue.size(); i++){
 			Instruction instr = DecodeUnit.integerQueue.get(i);
 			if(instr.type==TypeOfInstruction.valueOf("I")){
-				if(!DecodeUnit.integerBusyBitTable[instr.rs1.number] && !DecodeUnit.integerBusyBitTable[instr.rt1.number]){
+				if(isRsIntReady(instr) && isRtIntReady(instr)){
 					if(!EStage.isALU1Busy){
 						toBeIssuedToALU1 = instr;
 						gotALU1 = true;
@@ -106,7 +123,7 @@ public class IssueUnit {
 		for(int i=0; i<DecodeUnit.integerQueue.size(); i++){
 			Instruction instr = DecodeUnit.integerQueue.get(i);
 			if(instr.type==TypeOfInstruction.valueOf("I")){
-				if(!DecodeUnit.integerBusyBitTable[instr.rs1.number] && !DecodeUnit.integerBusyBitTable[instr.rt1.number]){
+				if(isRsIntReady(instr) && isRtIntReady(instr)){
 					if(!EStage.isALU2Busy){
 						toBeIssuedToALU2 = instr;
 						break;
@@ -117,10 +134,18 @@ public class IssueUnit {
 		}
 	}
 	
+	public static boolean isRsIntReady(Instruction instr) {
+		return !DecodeUnit.integerBusyBitTable[instr.rs1.number] || instr.rs1==DecodeUnit.R0; 
+	}
+	
+	public static boolean isRtIntReady(Instruction instr) {
+		return !DecodeUnit.integerBusyBitTable[instr.rt1.number] || instr.rt1==DecodeUnit.R0; 
+	}
+
 	public static void checkFloatingOperandReadinessAndFUAvailability() {
 		for(int i=0; i<DecodeUnit.floatingQueue.size(); i++){
 			Instruction instr = DecodeUnit.floatingQueue.get(i);
-			if(!DecodeUnit.floatingBusyBitTable[instr.rs1.number] && !DecodeUnit.floatingBusyBitTable[instr.rt1.number]){
+			if(isRsReady(instr) && isRtReady(instr)){
 					if(instr.type==TypeOfInstruction.valueOf("A")){
 						if(!FPADD1.isBusy){
 							toBeIssuedToFPADD1 = instr;
@@ -132,7 +157,7 @@ public class IssueUnit {
 		
 		for(int i=0; i<DecodeUnit.floatingQueue.size(); i++){
 			Instruction instr = DecodeUnit.floatingQueue.get(i);
-			if(!DecodeUnit.floatingBusyBitTable[instr.rs1.number] && !DecodeUnit.floatingBusyBitTable[instr.rt1.number]){
+			if(isRsReady(instr) && isRtReady(instr)){
 				if(instr.type==TypeOfInstruction.valueOf("M") && !instr.done){
 					if(!FPMUL1.isBusy){
 						toBeIssuedToFPMUL1 = instr;

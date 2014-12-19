@@ -13,7 +13,7 @@ public class FPMUL1 {
 	
 	public static void calc(int clock){
 		currentClock = clock;
-		if(instr!=null){
+		if(instr!=null && !instr.committed){
 			FPMUL1.isBusy = true;
 			if(!FPMUL2.isBusy){
 				toBeIssuedToFPMUL2 = instr;

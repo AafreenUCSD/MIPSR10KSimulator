@@ -12,13 +12,12 @@ public class FPMUL2 {
 		FPMUL2.isBusy = false;
 		if(instr!=null){
 			DecodeUnit.floatingBusyBitTable[instr.rd1.number] = false;
-			instr.done = true;
 		}
 	}
 	
 	public static void calc(int clock){
 		currentClock = clock;
-		if(instr!=null){
+		if(instr!=null && !instr.committed){
 			FPMUL2.isBusy = true;
 			if(!FPMUL3.isBusy){
 				toBeIssuedToFPMUL3 = instr;

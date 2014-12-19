@@ -59,12 +59,13 @@ public class FetchUnit {
 	}	
 	
 	public static void flush(){
-		//instructions = null;
+		instructions = null;
 	}
 	
 	public static void dumpState(){
 		for(int i=0; i<instructions.size(); i++){
 				Starter.pipelineDiagram[countFetched-i][currentClock] = "F"; 
+				//Starter.pipelineDiagram[countFetched-i][currentClock-1] = Integer.toString(countFetched+i); 
 		}
 	}
 }

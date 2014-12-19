@@ -11,14 +11,12 @@ public class EStage {
 	static boolean isALU2Busy = false;
 	
 	public static void edge(int clock){
-		if(inALU1!=null && !inALU1.done){
-			//inALU1.done = true;
+		if(inALU1!=null && inALU1.done){
 			DecodeUnit.integerBusyBitTable[inALU1.rd1.number] = false;
 			CommitUnit.fromALU1 = inALU1;
 			isALU1Busy = false;
 		}
-		if(inALU2!=null && !inALU2.done){
-			//inALU2.done = true;
+		if(inALU2!=null && inALU2.done){
 			DecodeUnit.integerBusyBitTable[inALU2.rd1.number] = false;
 			CommitUnit.fromALU2 = inALU2;
 			isALU2Busy = false;
@@ -29,7 +27,8 @@ public class EStage {
 		currentClock = clock;
 		if(EStage.inALU1!=null && !inALU1.done){
 			isALU1Busy = true;
-			if(inALU1.type==TypeOfInstruction.valueOf("B")){
+			inALU1.done = true;
+			if(inALU1.type==TypeOfInstruction.B){
 				//If it is a branch, use the misprediction bit to know how to resolve it
 				if(inALU1.correctPrediction){
 					removeBranchIDFromBranchMaskOfDependentInstructions();
@@ -42,18 +41,23 @@ public class EStage {
 		}
 		if(EStage.inALU2!=null && !inALU2.done){
 			isALU2Busy = true;
+			inALU2.done = true;
 			dumpState2();
 		}
 		
 	}
 
 	public static void removeBranchIDFromBranchMaskOfDependentInstructions() {
-		
+		for(int i=0; i<DecodeUnit.activeList.size(); i++){
+			Instruction instr = DecodeUnit.activeList.get(i);
+			if(instr.id > inALU1.id)
+				instr.branchMask.remove(inALU1);
+		}
 	}
 
 	public static void handleMispredictedBranch(Instruction instr) {
 		InstructionState state = retrieveStateFromBranchStack(instr);
-		abortInstructionsAfterBranch(state.branchID);
+		//abortInstructionsAfterBranch(state.branchID);
 	}
 
 	public static InstructionState retrieveStateFromBranchStack(Instruction instr) {
@@ -68,7 +72,6 @@ public class EStage {
 
 	public static void abortInstructionsAfterBranch(int branchID) {
 		setDestinationRegistersFree();
-		resetBusyBits();
 		flush();
 	}
 
@@ -93,18 +96,19 @@ public class EStage {
 
 	public static void removeFromStage() {
 		if(inALU2.id > inALU1.id){
-			//HOW TO REMOVE???
+			inALU2 = null;
 		}
 	}
 
-	public static void resetBusyBits() {
-		//DecodeUnit.integerBusyBitTable[]
-	}
-
 	public static void setDestinationRegistersFree() {
-		Instruction branchInstr = inALU1;
-		int branchID = branchInstr.id;
-		
+		Instruction instr;
+		for(int i=0; i< DecodeUnit.activeList.size(); i++){
+			instr = DecodeUnit.activeList.get(i);
+			if(instr.id >= inALU1.id){
+				DecodeUnit.integerBusyBitTable[inALU1.rd1.number] = false;
+				DecodeUnit.integerFreeList.add(inALU1.rd1);
+			}
+		}
 	}
 	
 	public static void dumpState1(){

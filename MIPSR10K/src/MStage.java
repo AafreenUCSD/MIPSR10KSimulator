@@ -6,13 +6,18 @@ public class MStage {
 	public static boolean isMStageBusy;
 	
 	public static void edge(int clock){
-		CommitUnit.fromAddressQueue = toBeSentToCommit;
+		if(instr!=null && instr.done){
+			DecodeUnit.integerBusyBitTable[instr.rt1.number] = false;
+			CommitUnit.fromAddressQueue = toBeSentToCommit;
+			isMStageBusy = false;
+		}
 	}
 	
 	public static void calc(int clock){
 		currentClock = clock;
-		if(instr!=null && !instr.done){
+		if(instr!=null && instr.addressComputed &&!instr.committed){
 			isMStageBusy = true;
+			instr.done = true;
 			toBeSentToCommit = instr;
 			dumpState();
 		}
