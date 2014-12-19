@@ -39,7 +39,7 @@ public class CommitUnit {
 		if(fromFPMUL3!=null && isInorderCommit(fromFPMUL3)){
 			dumpState4();
 			count++;
-			//fromFPMUL3.done = true;
+			fromFPMUL3.done = true;
 			DecodeUnit.activeList.remove(fromFPMUL3);
 			DecodeUnit.integerFreeList.add(fromFPMUL3.rd1);
 		}

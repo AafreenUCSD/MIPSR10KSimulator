@@ -11,13 +11,14 @@ public class EStage {
 	static boolean isALU2Busy = false;
 	
 	public static void edge(int clock){
-		//inALU1.rt1.number
 		if(inALU1!=null && !inALU1.done){
+			//inALU1.done = true;
 			DecodeUnit.integerBusyBitTable[inALU1.rd1.number] = false;
 			CommitUnit.fromALU1 = inALU1;
 			isALU1Busy = false;
 		}
 		if(inALU2!=null && !inALU2.done){
+			//inALU2.done = true;
 			DecodeUnit.integerBusyBitTable[inALU2.rd1.number] = false;
 			CommitUnit.fromALU2 = inALU2;
 			isALU2Busy = false;

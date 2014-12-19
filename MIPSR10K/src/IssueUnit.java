@@ -14,6 +14,7 @@ public class IssueUnit {
 	public static Instruction toBeIssuedToFPADD1;
 	public static Instruction toBeIssuedToFPMUL1;
 	
+	//Needs to be a circular FIFO to allow circling back and sending request again
 	public static List<Instruction> addressQueue = new ArrayList<Instruction>(16);
 	
 	public static void edge(int clock){
@@ -65,6 +66,8 @@ public class IssueUnit {
 		//Find the first branch in the integer queue 
 		//whose operands are available
 		//Assign it to ALU1 if ALU1 is free
+		boolean gotBranch = false;
+		boolean gotALU1 = false;
 		
 		for(int i=0; i<DecodeUnit.integerQueue.size(); i++){
 			Instruction instr = DecodeUnit.integerQueue.get(i);
@@ -72,6 +75,7 @@ public class IssueUnit {
 				if(!DecodeUnit.integerBusyBitTable[instr.rs1.number] && !DecodeUnit.integerBusyBitTable[instr.rt1.number]){
 					if(!EStage.isALU1Busy){
 						toBeIssuedToALU1 = instr;
+						gotBranch = true;
 						break;
 					}
 				}
@@ -82,19 +86,34 @@ public class IssueUnit {
 		//whose operands are available
 		//Assign it to ALU2 if ALU2 is free
 		//else to ALU1 if ALU1 is free
+		if(!gotBranch){
+		for(int i=0; i<DecodeUnit.integerQueue.size(); i++){
+			Instruction instr = DecodeUnit.integerQueue.get(i);
+			if(instr.type==TypeOfInstruction.valueOf("I")){
+				if(!DecodeUnit.integerBusyBitTable[instr.rs1.number] && !DecodeUnit.integerBusyBitTable[instr.rt1.number]){
+					if(!EStage.isALU1Busy){
+						toBeIssuedToALU1 = instr;
+						gotALU1 = true;
+						break;
+					}
+				}
+			}
+		}
+		}
 		
+		if(gotALU1){
+			DecodeUnit.integerQueue.remove(toBeIssuedToALU1);
 		for(int i=0; i<DecodeUnit.integerQueue.size(); i++){
 			Instruction instr = DecodeUnit.integerQueue.get(i);
 			if(instr.type==TypeOfInstruction.valueOf("I")){
 				if(!DecodeUnit.integerBusyBitTable[instr.rs1.number] && !DecodeUnit.integerBusyBitTable[instr.rt1.number]){
 					if(!EStage.isALU2Busy){
 						toBeIssuedToALU2 = instr;
-					}
-					else if(!EStage.isALU1Busy){
-						toBeIssuedToALU1 = instr;
+						break;
 					}
 				}
 			}
+		}
 		}
 	}
 	
